@@ -23,7 +23,7 @@
 *  Created      :   07/20/2011
 *  Updated      :   12/04/2011
 *
-*  Version      :   1.4.0
+*  Version      :   1.5.0
 * 
 *  Changelog    :    
 *       
@@ -36,6 +36,8 @@
 *       12/04/2011  :   Removed the flags completely.
 *                       Modified the DONE stages a bit.
 *                       Added a lot of comments.
+*       12/04/2011  :   Replaced the split array with a 2D array.
+*                       Removed the z-bus drivers from each state.
 *
 *  TODO :
 *       1. Make the interrupts positive or negative edge triggered depending
@@ -77,18 +79,14 @@ module INTR_CNTRL (
     reg     [1:0]   cmdMode_reg, cmdMode_next;      // Interrupt mode
     reg     [1:0]   cmdCycle_reg, cmdCycle_next;    // Machine cycle
     reg     [2:0]   intrIndex_reg, intrIndex_next;  // Cycle through all 8 in polling
-    reg     [2:0]   intrPtr_reg, intrPtr_next;      // Interrupt pointer 
-    reg     [2:0]   prior_table_0_next, prior_table_0_reg;  // FIXME - 2 interrupts with same priority?
-    reg     [2:0]   prior_table_1_next, prior_table_1_reg;
-    reg     [2:0]   prior_table_2_next, prior_table_2_reg;
-    reg     [2:0]   prior_table_3_next, prior_table_3_reg;
-    reg     [2:0]   prior_table_4_next, prior_table_4_reg;
-    reg     [2:0]   prior_table_5_next, prior_table_5_reg;
-    reg     [2:0]   prior_table_6_next, prior_table_6_reg;
-    reg     [2:0]   prior_table_7_next, prior_table_7_reg;
+    reg     [2:0]   intrPtr_reg, intrPtr_next;      // Interrupt pointer
+    reg     [2:0]   prior_table_next [0:7]; 
+    reg     [2:0]   prior_table_reg [0:7];
     reg             oe_reg, oe_next;                // Output enable for the bidirectional bus
     reg     [7:0]   intrBus_reg, intrBus_next;      // Bus <= register if using bus as output
     reg             intrOut_reg, intrOut_next;      // Interrupt output
+
+    integer         i;
 
     //
     // Main FSM of the controller. The state machine is clocked. The output and next state logic
@@ -105,14 +103,9 @@ module INTR_CNTRL (
             intrOut_reg         <=  1'b0;
             intrIndex_reg       <=  3'b000;
             intrPtr_reg         <=  3'b000;
-            prior_table_0_reg   <=  3'b000;
-            prior_table_1_reg   <=  3'b000;
-            prior_table_2_reg   <=  3'b000;
-            prior_table_3_reg   <=  3'b000;
-            prior_table_4_reg   <=  3'b000;
-            prior_table_5_reg   <=  3'b000;
-            prior_table_6_reg   <=  3'b000;
-            prior_table_7_reg   <=  3'b000;
+            for (i = 0; i < 8; i = i + 1) begin
+                prior_table_reg[i]  <=  3'b000;
+            end
         end
  
         else begin
@@ -124,14 +117,9 @@ module INTR_CNTRL (
             oe_reg              <=  oe_next;
             intrIndex_reg       <=  intrIndex_next;
             intrPtr_reg         <=  intrPtr_next;
-            prior_table_0_reg   <=  prior_table_0_next;
-            prior_table_1_reg   <=  prior_table_1_next;
-            prior_table_2_reg   <=  prior_table_2_next;
-            prior_table_3_reg   <=  prior_table_3_next;
-            prior_table_4_reg   <=  prior_table_4_next;
-            prior_table_5_reg   <=  prior_table_5_next;
-            prior_table_6_reg   <=  prior_table_6_next;
-            prior_table_7_reg   <=  prior_table_7_next;
+            for (i = 0; i < 8; i = i + 1) begin
+                prior_table_reg[i]  <=  prior_table_next[i];
+            end
         end
     end
 
@@ -148,14 +136,9 @@ module INTR_CNTRL (
         intrBus_next        =   intrBus_reg;
         intrIndex_next      =   intrIndex_reg;
         intrPtr_next        =   intrPtr_reg;
-        prior_table_0_next  =   prior_table_0_reg;
-        prior_table_1_next  =   prior_table_1_reg;
-        prior_table_2_next  =   prior_table_2_reg;
-        prior_table_3_next  =   prior_table_3_reg;
-        prior_table_4_next  =   prior_table_4_reg;
-        prior_table_5_next  =   prior_table_5_reg;
-        prior_table_6_next  =   prior_table_6_reg;
-        prior_table_7_next  =   prior_table_7_reg;
+        for (i = 0; i < 8; i = i + 1) begin
+            prior_table_next[i] =   prior_table_reg[i];
+        end
  
         case (state_reg)
             // Reset state, every variable is set to zero and the bus is tristated.
@@ -164,15 +147,10 @@ module INTR_CNTRL (
                 cmdCycle_next       =   2'b00;
                 intrIndex_next      =   3'b000;
                 intrPtr_next        =   3'b000;
-                prior_table_0_next  =   3'b000;         // FIXME - Can this be in a loop?
-                prior_table_1_next  =   3'b000;
-                prior_table_2_next  =   3'b000;
-                prior_table_3_next  =   3'b000;
-                prior_table_4_next  =   3'b000;
-                prior_table_5_next  =   3'b000;
-                prior_table_6_next  =   3'b000;
-                prior_table_7_next  =   3'b000;
-                intrBus_next        =   8'bzzzzzzzz;
+                for (i = 0; i < 8; i = i + 1) begin
+                    prior_table_next[i] =   3'b000;
+                end
+                //intrBus_next        =   8'bzzzzzzzz;
                 oe_next             =   1'b0;
  
                 state_next  =   S_GetCommands;          // Wait for commands.
@@ -197,26 +175,26 @@ module INTR_CNTRL (
                     2'b10: begin                                                // Priority mode.
                         case (cmdCycle_reg)
                             2'b00: begin
-                                prior_table_0_next  =   intr_bus[7:5];          // Priority 0, highest priority.
-                                prior_table_1_next  =   intr_bus[4:2];          // Priority 1
+                                prior_table_next[0] =   intr_bus[7:5];          // Priority 0, highest priority.
+                                prior_table_next[1] =   intr_bus[4:2];          // Priority 1
                                 state_next          =   S_GetCommands;
                                 cmdCycle_next       =   cmdCycle_reg + 1'b1;
                             end
                             2'b01: begin
-                                prior_table_2_next  =   intr_bus[7:5];          // Priority 2
-                                prior_table_3_next  =   intr_bus[4:2];          // Priority 3
+                                prior_table_next[2] =   intr_bus[7:5];          // Priority 2
+                                prior_table_next[3] =   intr_bus[4:2];          // Priority 3
                                 state_next          =   S_GetCommands;
                                 cmdCycle_next       =   cmdCycle_reg + 1'b1;
                             end
                             2'b10: begin
-                                prior_table_4_next  =   intr_bus[7:5];          // Priority 4
-                                prior_table_5_next  =   intr_bus[4:2];          // Priority 5
+                                prior_table_next[4] =   intr_bus[7:5];          // Priority 4
+                                prior_table_next[5] =   intr_bus[4:2];          // Priority 5
                                 state_next          =   S_GetCommands;
                                 cmdCycle_next       =   cmdCycle_reg + 1'b1;
                             end
                             2'b11: begin
-                                prior_table_6_next  =   intr_bus[7:5];          // Priority 6
-                                prior_table_7_next  =   intr_bus[4:2];          // Priority 7, lowest priority.
+                                prior_table_next[6] =   intr_bus[7:5];          // Priority 6
+                                prior_table_next[7] =   intr_bus[4:2];          // Priority 7, lowest priority.
                                 state_next          =   S_JumpIntMethod;        // Once done, start proper interrupt sequence.
                                 cmdCycle_next       =   cmdCycle_reg + 1'b1;
                                 cmdMode_next        =   2'b10;                  // Set mode to priority (internal).
@@ -255,7 +233,7 @@ module INTR_CNTRL (
                     end
                 endcase
  
-                intrBus_next    =   8'bzzzzzzzz;            // The bus is tristated.
+                //intrBus_next    =   8'bzzzzzzzz;            // The bus is tristated.
                 oe_next         =   1'b0;                   // Controller is not driving the bus.
             end
  
@@ -274,7 +252,7 @@ module INTR_CNTRL (
                     intrIndex_next  =   intrIndex_reg + 1;  // Check the next interrupt source.
                 end
 
-                intrBus_next    =   8'bzzzzzzzz;            // The bus is tristated.
+                //intrBus_next    =   8'bzzzzzzzz;            // The bus is tristated.
                 oe_next         =   1'b0;                   // Controller is not driving the bus.
             end
  
@@ -291,7 +269,10 @@ module INTR_CNTRL (
                     intrBus_next    =   {5'b01011, intrIndex_reg};  // 01011 is the control code that the lower 3 bits are the interrupt ID.
                     oe_next         =   1'b1;                       // Controller will drive the bus with this data.
                     state_next      =   S_AckTxInfoRxPolling;       // Go to acknowledge state and wait for the acknowledge.
+                    $display ("Bus should be active right now");
                 end                                                 // Wait until processor acknowledges the interrupt. Keep output high till that time.
+                else
+                    state_next      =   S_TxIntInfoPolling;
             end
 
             // In the previous state, the processor had acknowledged the interrupt and the controller had sent the interrupt ID
@@ -301,7 +282,7 @@ module INTR_CNTRL (
             //
             S_AckTxInfoRxPolling: begin // 4'b0101
                 if (~intr_in) begin                                 // The processor has acknowledged the interrupt address.
-                    intrBus_next    =   8'bzzzzzzzz;                // Tristate the bus.
+                    //intrBus_next    =   8'bzzzzzzzz;                // Tristate the bus.
                     oe_next         =   1'b0;                       // Controller no longer drives the bus.
                     state_next      =   S_AckISRDonePolling;        // Go do polling done state.
                 end                                                 // Wait until processor acknowledges the address. Keep bus active till that time.
@@ -335,50 +316,50 @@ module INTR_CNTRL (
             // the priorities received during the initialization.
             //
             S_StartPriority: begin // 4'b0111
-                if (intr_rq[prior_table_0_reg]) begin               // Check if the highest priority source is active.
-                    intrPtr_next    =   prior_table_0_reg;          // If the highest priority interrupt is active,
+                if (intr_rq[prior_table_reg[0]]) begin              // Check if the highest priority source is active.
+                    intrPtr_next    =   prior_table_reg[0];         // If the highest priority interrupt is active,
                     intrOut_next    =   1'b1;                       // set the output high.
                     state_next      =   S_TxIntInfoPriority;        // Go wait for acknowledgement.
                 end
  
-                else if (intr_rq[prior_table_1_reg]) begin          // Else check the next highest priority.
-                    intrPtr_next    =   prior_table_1_reg;          // Continue as above.
+                else if (intr_rq[prior_table_reg[1]]) begin         // Else check the next highest priority.
+                    intrPtr_next    =   prior_table_reg[1];         // Continue as above.
                     intrOut_next    =   1'b1;
                     state_next      =   S_TxIntInfoPriority;
                 end
  
-                else if (intr_rq[prior_table_2_reg]) begin
-                    intrPtr_next    =   prior_table_2_reg;
+                else if (intr_rq[prior_table_reg[2]]) begin
+                    intrPtr_next    =   prior_table_reg[2];
                     intrOut_next    =   1'b1;
                     state_next      =   S_TxIntInfoPriority;
                 end
  
-                else if (intr_rq[prior_table_3_reg]) begin
-                    intrPtr_next    =   prior_table_3_reg;
+                else if (intr_rq[prior_table_reg[3]]) begin
+                    intrPtr_next    =   prior_table_reg[3];
                     intrOut_next    =   1'b1;
                     state_next      =   S_TxIntInfoPriority;
                 end
  
-                else if (intr_rq[prior_table_4_reg]) begin
-                    intrPtr_next    =   prior_table_4_reg;
+                else if (intr_rq[prior_table_reg[4]]) begin
+                    intrPtr_next    =   prior_table_reg[4];
                     intrOut_next    =   1'b1;
                     state_next      =   S_TxIntInfoPriority;
                 end
  
-                else if (intr_rq[prior_table_5_reg]) begin
-                    intrPtr_next    =   prior_table_5_reg;
+                else if (intr_rq[prior_table_reg[5]]) begin
+                    intrPtr_next    =   prior_table_reg[5];
                     intrOut_next    =   1'b1;
                     state_next      =   S_TxIntInfoPriority;
                 end
  
-                else if (intr_rq[prior_table_6_reg]) begin
-                    intrPtr_next    =   prior_table_6_reg;
+                else if (intr_rq[prior_table_reg[6]]) begin
+                    intrPtr_next    =   prior_table_reg[6];
                     intrOut_next    =   1'b1;
                     state_next      =   S_TxIntInfoPriority;
                 end
  
-                else if (intr_rq[prior_table_7_reg]) begin
-                    intrPtr_next    =   prior_table_7_reg;
+                else if (intr_rq[prior_table_reg[7]]) begin
+                    intrPtr_next    =   prior_table_reg[7];
                     intrOut_next    =   1'b1;
                     state_next      =   S_TxIntInfoPriority;
                 end
@@ -387,7 +368,7 @@ module INTR_CNTRL (
                     state_next  =   S_StartPriority;                // till one of them is active.
                 end
 
-                intrBus_next    =   8'bzzzzzzzz;                    // The bus is tristated.
+                //intrBus_next    =   8'bzzzzzzzz;                    // The bus is tristated.
                 oe_next         =   1'b0;                           // Controller is not driving the bus.
             end
 
@@ -414,7 +395,7 @@ module INTR_CNTRL (
             // 
             S_AckTxInfoRxPriority: begin // 4'b1001
                 if (~intr_in) begin                                 // Address has been acknowledged.
-                    intrBus_next    =   8'bzzzzzzzz;                // The bus is tristated.
+                    //intrBus_next    =   8'bzzzzzzzz;                // The bus is tristated.
                     oe_next         =   1'b0;                       // Controller no longer drives the bus.
                     state_next      =   S_AckISRDonePriority;       // Go and wait for interrupt to be serviced.
                 end
@@ -443,7 +424,7 @@ module INTR_CNTRL (
             // If the state bits are invalid then go to reset.
             default: begin
                 state_next      =   S_Reset;
-                intrBus_next    =   8'bzzzzzzzz;
+                //intrBus_next    =   8'bzzzzzzzz;
                 oe_next         =   1'b0;
             end
         endcase
