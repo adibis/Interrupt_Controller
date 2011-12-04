@@ -23,7 +23,7 @@
 *  Created      :   07/20/2011
 *  Updated      :   12/04/2011
 *
-*  Version      :   1.5.0
+*  Version      :   1.6.0
 * 
 *  Changelog    :    
 *       
@@ -38,6 +38,8 @@
 *                       Added a lot of comments.
 *       12/04/2011  :   Replaced the split array with a 2D array.
 *                       Removed the z-bus drivers from each state.
+*                       Added bus_oe pin. Active when controller drives the bus.
+*
 *
 *  TODO :
 *       1. Make the interrupts positive or negative edge triggered depending
@@ -54,7 +56,8 @@ module INTR_CNTRL (
         input   wire    [7:0]   intr_rq,    // Interrupt request
         inout   wire    [7:0]   intr_bus,   // Bidirectional data bus
         input   wire            intr_in,    // Ack from processor
-        output  wire            intr_out    // Interrupt to processor
+        output  wire            intr_out,   // Interrupt to processor
+        output  wire            bus_oe      // Bus output enable
     );
  
     localparam  [3:0]   S_Reset                 = 4'b0000,  // Reset or start state
@@ -269,7 +272,6 @@ module INTR_CNTRL (
                     intrBus_next    =   {5'b01011, intrIndex_reg};  // 01011 is the control code that the lower 3 bits are the interrupt ID.
                     oe_next         =   1'b1;                       // Controller will drive the bus with this data.
                     state_next      =   S_AckTxInfoRxPolling;       // Go to acknowledge state and wait for the acknowledge.
-                    $display ("Bus should be active right now");
                 end                                                 // Wait until processor acknowledges the interrupt. Keep output high till that time.
                 else
                     state_next      =   S_TxIntInfoPolling;
@@ -435,6 +437,9 @@ module INTR_CNTRL (
     // Bus is bidirectional. oe (output enable) decides if the controller is driving it
     // or is expecting input on it.
     assign intr_bus =   (oe_reg) ? intrBus_reg : 8'bzzzzzzzz;
+    // Used by the testbench. This signal tells the processor if the bus is being actively
+    // driven by the controller.
+    assign bus_oe   =   oe_reg;
 
 endmodule // INTR_CNTRL
 
