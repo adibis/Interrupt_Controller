@@ -1,0 +1,16 @@
+Simple Interrupt Controller
+    Author: Aditya Shevade <aditya.shevade@gmail.com>
+===============================================================================
+
+    This is a simple 8 input interrupt controller.
+    Written in verilog.
+
+    Currently it supports two modes, polling and custom priority.
+    In polling, source 0 has highest priority and 7 the lowest.
+    In the custom priority mode, the priorities are set during the
+    initialization phase. The controller then polls the sources in
+    this custom order.
+
+    More details and a comprehensive testbench to follow.
+
+===============================================================================
