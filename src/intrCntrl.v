@@ -23,7 +23,7 @@
 *  Created      :   07/20/2011
 *  Updated      :   12/04/2011
 *
-*  Version      :   1.6.0
+*  Version      :   1.6.1
 * 
 *  Changelog    :    
 *       
@@ -39,6 +39,7 @@
 *       12/04/2011  :   Replaced the split array with a 2D array.
 *                       Removed the z-bus drivers from each state.
 *                       Added bus_oe pin. Active when controller drives the bus.
+*       12/05/2011  :   Modified the condition check in ISR_DONE states.
 *
 *
 *  TODO :
@@ -301,7 +302,7 @@ module INTR_CNTRL (
                 end
                 // If the acknowledgement did not have proper condition codes then that is an error and
                 // controller goes back to reset.
-                else if ((~intr_in) && (intrBus_reg[7:3] != 5'b10100) && (intrBus_reg[2:0] != intrIndex_reg)) begin
+                else if ((~intr_in) && (intr_bus[7:3] != 5'b10100) && (intr_bus[2:0] != intrIndex_reg)) begin
                     state_next  =   S_Reset;
                 end
                 else begin
@@ -410,12 +411,12 @@ module INTR_CNTRL (
             // Once this has been acknowledged, the controller returns to check the interrrupt sources.
             S_AckISRDonePriority: begin // 4'b1010
                 // If the proper source and condition has been acknowleged, check next interrupt.
-                if ((~intr_in) && (intrBus_reg[7:3] == 5'b01100) && (intrBus_reg[2:0] == intrPtr_reg)) begin
+                if ((~intr_in) && (intr_bus[7:3] == 5'b01100) && (intr_bus[2:0] == intrPtr_reg)) begin
                     state_next  =   S_StartPriority;
                 end
                 // Else, the controller assumes this to be an error. (If the condition codes are wrong).
                 // In that case it returns to reset state.
-                else if ((~intr_in) && (intrBus_reg[7:3] != 5'b01100) && (intrBus_reg[2:0] != intrPtr_reg)) begin
+                else if ((~intr_in) && (intr_bus[7:3] != 5'b01100) && (intr_bus[2:0] != intrPtr_reg)) begin
                     state_next  =   S_Reset;
                 end
                 else begin
