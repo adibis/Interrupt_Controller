@@ -6,11 +6,80 @@ Simple Interrupt Controller
     Written in verilog.
 
     Currently it supports two modes, polling and custom priority.
-    In polling, source 0 has highest priority and 7 the lowest.
+
+    In polling, there are no priorities. All the interrupts are
+    checked periodically and if any one of them is active then it
+    is serviced.
+ 
     In the custom priority mode, the priorities are set during the
     initialization phase. The controller then polls the sources in
     this custom order.
 
-    More details and a comprehensive testbench to follow.
-
+Operation
 ===============================================================================
+    After Reset, the controller waits for commands from the master
+    (processor) on the bus. The lowest 2 bits determine the mode of
+    operation.
+
+    01 - Polling mode
+    10 - Priority mode.
+
+    It keeps waiting for valid input mode.
+
+Polling
+===============================================================================
+    The bus is driven as xxxx_xx01 for exactly 1 clock by processor.
+    Controller knows this is the polling mode. It then enters the
+    polling state where it keeps checkig for all interrupt sources
+    in cycle.
+
+    If any interrupt is found active then intr_out is set to 1.
+    After that, the controller waits for an acknowledgement from
+    the processor.
+
+    Once the processor gives acknowledgement, exactly for 1 clock
+    cycle on intr_in by a high -> low -> high transition, the
+    controller starts driving the bus with the condition code of
+    xxxxx_intrID. The intrID part is the ID of the source currently
+    being serviced.
+
+    Controller keeps this data on the bus it it receives another
+    acknowledgement from the processor on the intr_in pin in the
+    same mannter (High -> Low -> High).
+
+    After that, the controller waits for the confirmation from the
+    processor that the interrupt has been serviced. Processor, once
+    done, sends another acknowledgement on the intr_in pin in the
+    same mannter (High -> Low -> High) along with the condition
+    code of xxxxx_intrID on the bus. This interrupt ID must match
+    the one sent last by the controller. 
+
+    If either the condition code or the intrID does not match then
+    the controller goes to reset state. Else it just checks (polls)
+    the next source and continues in this cycle unless reset.
+
+
+Custom Priority
+===============================================================================
+    More to follow
+
+Timing Diagram
+===============================================================================
+
+intr_out         __________________
+            ____|                  |___________________________________________
+
+intr_in     __________________      ______________      ___________      _____
+                              |____|              |____|           |____|
+
+data_bus    _______________________|||||||||||||||||||||___________||||||_____
+           
+
+-------------------------------------------------------------------------------
+    Note - The first time the data_bus is active is when the controller
+    drives the bus. Next time when it's active, the processor drives it.
+-------------------------------------------------------------------------------
+    Note - The timing diagram remains the same on both polling and custom
+    priority modes. Only thing that changes is the ack data on the bus.
+-------------------------------------------------------------------------------
+
