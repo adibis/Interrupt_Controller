@@ -40,7 +40,7 @@ Polling
     Once the processor gives acknowledgement, exactly for 1 clock
     cycle on intr_in by a high -> low -> high transition, the
     controller starts driving the bus with the condition code of
-    xxxxx_intrID. The intrID part is the ID of the source currently
+    01011_intrID. The intrID part is the ID of the source currently
     being serviced.
 
     Controller keeps this data on the bus it it receives another
@@ -51,7 +51,7 @@ Polling
     processor that the interrupt has been serviced. Processor, once
     done, sends another acknowledgement on the intr_in pin in the
     same mannter (High -> Low -> High) along with the condition
-    code of xxxxx_intrID on the bus. This interrupt ID must match
+    code of 10100_intrID on the bus. This interrupt ID must match
     the one sent last by the controller. 
 
     If either the condition code or the intrID does not match then
@@ -61,7 +61,29 @@ Polling
 
 Custom Priority
 ===============================================================================
-    More to follow
+    Working of this mode is exactly similar to the polling exept
+    that it does not poll the sources in order.
+
+    After reset, if the input is xxxyyy10 then the controller is
+    in custom priority mode. xxx is the source ID of the highest
+    interrupt and yyy is the ID of the second to highest. The
+    processor needs to give 4 such cycles to and give the prio-
+    -rities for all 8 sources.
+
+    After that the controller goes on checking from the highest
+    to lowest source to check if any of them is active. If it is
+    then the operation continues similar to the polling mode.
+
+    The only things that change are the condition codes that are
+    sent to and from the processor. The controller sends 10011
+    and the processor acknowledges with 01100.
+
+-------------------------------------------------------------------------------
+TODO:   Currently there is no way of checking if two (or more) of
+        the sources are same. This can be good if you want to disable
+        some interrupts. You can repeat the last priority till you
+        have reached the total count of 8.
+-------------------------------------------------------------------------------
 
 Timing Diagram
 ===============================================================================
@@ -82,4 +104,17 @@ data_bus    _______________________|||||||||||||||||||||___________||||||_____
     Note - The timing diagram remains the same on both polling and custom
     priority modes. Only thing that changes is the ack data on the bus.
 -------------------------------------------------------------------------------
+
+Condition Codes
+===============================================================================
+
+    Polling:
+        From Controller     -   01011
+        From Processor      -   10100
+
+    Custom Priority
+        From Controller     -   10011
+        From Processor      -   01100
+
+===============================================================================
 
