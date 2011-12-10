@@ -1,17 +1,14 @@
 /******************************************************************************
 *
 *  Filename    :    intrCntrl_tb.v
-*  Description :    Test  simple programmable interrupt controller IC.
+*
+*  Description :    Testbench for the interrupt controller. Currently supports
+                    polling and custom priority mode.
 *
 *  Author      :    Aditya Shevade
 *                   <aditya.shevade@gmail.com>
 *  
 *  Created     :    12/04/2011
-*  Updated     :    12/04/2011
-*
-*  Version     :    1.0.0
-* 
-*  Changelog   :    
 *       
 ******************************************************************************
 */

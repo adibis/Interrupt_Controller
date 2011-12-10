@@ -1,0 +1,17 @@
+TODO
+===============================================================================
+
+    Interrupt Controller
+    --------------------
+
+    1. Make the interrupts positive or negative edge triggered depending
+       on the status of a status register.
+    2. Add vectored interrupts depending on status register. Add more
+       states to get vectoring information.
+
+    Testbench
+    ---------
+
+    1. Convert to system verilog. Add assertions and randomization.
+       Add coverage to make sure all priority combintations are tested.
+

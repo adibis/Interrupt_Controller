@@ -2,7 +2,10 @@
 ******************************************************************************
 *
 *  Filename     :   intrCntrl.v
-*  Description  :   Simple programmable interrupt controller IC.
+*
+*  Description  :   Simple programmable interrupt controller module. It has 8 inputs
+*                   and supports polling mode and a custom priority mode. Please
+*                   refer to the README file for more information.
 *
 *  Author       :   Aditya Shevade
 *                   <aditya.shevade@gmail.com>
@@ -21,32 +24,6 @@
 *                   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *  
 *  Created      :   07/20/2011
-*  Updated      :   12/04/2011
-*
-*  Version      :   1.6.1
-* 
-*  Changelog    :    
-*       
-*       07/20/2011  :   Created the project
-*       07/23/2011  :   Improved FSM logic removed some glitches
-*       07/25/2011  :   Made lot of changes to make code synthesizable
-*                       Expanded the 2D array, added flag_reg and flag_next
-*       07/25/2011  :   Added reg and next registers to priority table to
-*                       remove the latches generated at synthesis
-*       12/04/2011  :   Removed the flags completely.
-*                       Modified the DONE stages a bit.
-*                       Added a lot of comments.
-*       12/04/2011  :   Replaced the split array with a 2D array.
-*                       Removed the z-bus drivers from each state.
-*                       Added bus_oe pin. Active when controller drives the bus.
-*       12/05/2011  :   Modified the condition check in ISR_DONE states.
-*
-*
-*  TODO :
-*       1. Make the interrupts positive or negative edge triggered depending
-*       on the status of a status register.
-*       2. Add vectored interrupts depending on status register. Add more
-*       states to get vectoring information.
 *
 ******************************************************************************
 */
